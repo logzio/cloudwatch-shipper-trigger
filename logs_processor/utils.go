@@ -68,8 +68,8 @@ func getSendAll() bool {
 
 	sendAll, err := strconv.ParseBool(saStr)
 	if err != nil {
-		logger.Info(fmt.Sprintf("Cannot handle user input for %s, error: %s", envSendAll, err.Error()))
-		logger.Info(fmt.Sprintf("Reverting for default value %t", defaultSendAll))
+		//logger.Info(fmt.Sprintf("Cannot handle user input for %s, error: %s", envSendAll, err.Error()))
+		//logger.Info(fmt.Sprintf("Reverting for default value %t", defaultSendAll))
 		return defaultSendAll
 	}
 
@@ -97,18 +97,18 @@ func getListener() (string, error) {
 func getTimeout() time.Duration {
 	timeoutStr := os.Getenv(envTimeout)
 	if timeoutStr == emptyString {
-		sugLog.Infof("Using default timeout %d", defaultTimeout)
+		//sugLog.Infof("Using default timeout %d", defaultTimeout)
 		return time.Duration(defaultTimeout) * time.Second
 	}
 
 	timeoutNum, err := strconv.Atoi(timeoutStr)
 	if err != nil {
-		sugLog.Warnf("Could not convert properly timeout entered by user: %s", err.Error())
-		sugLog.Infof("Reverting to default timeout: %d", defaultTimeout)
+		//sugLog.Warnf("Could not convert properly timeout entered by user: %s", err.Error())
+		//sugLog.Infof("Reverting to default timeout: %d", defaultTimeout)
 		timeoutNum = defaultTimeout
 	}
 
 	timeout := time.Duration(timeoutNum) * time.Second
-	sugLog.Debugf("setting timeout: %v", timeout)
+	//sugLog.Debugf("setting timeout: %v", timeout)
 	return timeout
 }

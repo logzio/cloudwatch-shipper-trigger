@@ -4,15 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"main/aws_structures"
-	lp "main/logger"
 	"strings"
 )
 
-var logger = lp.GetLogger()
-var sugLog = logger.Sugar()
+//var logger = lp.GetLogger()
+//var sugLog = logger.Sugar()
 
 func ProcessLogs(cwEvent aws_structures.CWEvent) error {
-	defer logger.Sync()
+	//defer logger.Sync()
 	logzioSender, err := initializeSender()
 	if err != nil {
 		return err
@@ -36,12 +35,13 @@ func ProcessLogs(cwEvent aws_structures.CWEvent) error {
 		err = sendLog(logzioLog, logzioSender)
 		if err == nil {
 			logsWritten += 1
-		} else {
-			sugLog.Error(err.Error())
 		}
+		//} else {
+		//	sugLog.Error(err.Error())
+		//}
 	}
 
-	sugLog.Infof("Wrote %d logs to the Logzio Sender", logsWritten)
+	//sugLog.Infof("Wrote %d logs to the Logzio Sender", logsWritten)
 	return nil
 }
 
@@ -49,17 +49,17 @@ func ProcessLogs(cwEvent aws_structures.CWEvent) error {
 // If it's a JSON - it adds its fields to logzioLog.
 // If not - add as a string
 func handleMessageField(logzioLog map[string]interface{}, messageField string) {
-	var tmpJson map[string]interface{}
-	err := json.Unmarshal([]byte(messageField), &tmpJson)
-	if err != nil {
-		sugLog.Infof("Message %s cannot be parsed to JSON. Will be sent as a string", messageField)
-		logzioLog[fieldMessage] = messageField
-	} else {
-		sugLog.Debug("Successfully parsed message to JSON!")
-		for key, value := range tmpJson {
-			logzioLog[key] = value
-		}
-	}
+	//var tmpJson map[string]interface{}
+	//err := json.Unmarshal([]byte(messageField), &tmpJson)
+	//if err != nil {
+	//	//sugLog.Infof("Message %s cannot be parsed to JSON. Will be sent as a string", messageField)
+	logzioLog[fieldMessage] = messageField
+	//} else {
+	//	//sugLog.Debug("Successfully parsed message to JSON!")
+	//	for key, value := range tmpJson {
+	//		logzioLog[key] = value
+	//	}
+	//}
 }
 
 // addEventFields add to logzioLog the fields from the CW event, except for the timestamp field (which is handled by addLogzioFields)
@@ -121,7 +121,8 @@ func sendLog(logzioLog map[string]interface{}, sender LogzioSender) error {
 	}
 
 	if len(logBytes) > maxLogBytesSize {
-		sugLog.Debug("log dropped: %s", string(logBytes))
+		//sugLog.Debug("log dropped: %s", string(logBytes))
+		// TODO: change to sending only partial log
 		return fmt.Errorf("Log will be dropped - log size is bigger than %d", maxLogBytesSize)
 	}
 
@@ -137,7 +138,7 @@ func shouldProcessLog(message string) bool {
 	} else {
 		for _, prefix := range prefixList {
 			if strings.HasPrefix(message, prefix) {
-				sugLog.Debug("Found a Lambda platform log (START, END or REPORT). Ignoring.")
+				//sugLog.Debug("Found a Lambda platform log (START, END or REPORT). Ignoring.")
 				return false
 			}
 		}

@@ -36,7 +36,7 @@ func initializeSender() (LogzioSender, error) {
 		HttpClient: client,
 	}
 
-	sugLog.Debugf("Using sender: %v", sender)
+	//sugLog.Debugf("Using sender: %v", sender)
 
 	return sender, nil
 }
@@ -61,11 +61,11 @@ func (l *LogzioSender) SendToLogzio(bytesToSend []byte) error {
 	toBackOff := false
 	for attempt := 0; attempt < sendRetries; attempt++ {
 		if toBackOff {
-			sugLog.Warnf("Failed to send logs, trying again in %v", backOff)
+			//sugLog.Warnf("Failed to send logs, trying again in %v", backOff)
 			time.Sleep(backOff)
 			backOff *= 2
 		}
-		sugLog.Debugf("Trying to send log: %s", string(bytesToSend))
+		//sugLog.Debugf("Trying to send log: %s", string(bytesToSend))
 		statusCode = l.makeHttpRequest(compressedBuf)
 		if l.shouldRetry(statusCode) {
 			toBackOff = true
@@ -75,7 +75,7 @@ func (l *LogzioSender) SendToLogzio(bytesToSend []byte) error {
 	}
 
 	if statusCode != 200 {
-		sugLog.Errorf("Error sending logs, status code is: %d", statusCode)
+		//sugLog.Errorf("Error sending logs, status code is: %d", statusCode)
 	}
 
 	compressedBuf.Reset()
@@ -90,7 +90,7 @@ func (l *LogzioSender) shouldRetry(statusCode int) bool {
 	case http.StatusNotFound:
 		retry = false
 	case http.StatusUnauthorized:
-		sugLog.Error("Please check your Logz.io logs shipping token!")
+		//sugLog.Error("Please check your Logz.io logs shipping token!")
 		retry = false
 	case http.StatusForbidden:
 		retry = false
@@ -98,7 +98,7 @@ func (l *LogzioSender) shouldRetry(statusCode int) bool {
 		retry = false
 	}
 
-	sugLog.Debugf("Got HTTP status code %d. Should retry? %t", statusCode, retry)
+	//sugLog.Debugf("Got HTTP status code %d. Should retry? %t", statusCode, retry)
 
 	return retry
 }
@@ -106,23 +106,23 @@ func (l *LogzioSender) shouldRetry(statusCode int) bool {
 func (l *LogzioSender) makeHttpRequest(data bytes.Buffer) int {
 	req, err := http.NewRequest(http.MethodPost, l.Url, &data)
 	req.Header.Add("Content-Encoding", "gzip")
-	sugLog.Debugf("Sending bulk of %d bytes", data.Len())
+	//sugLog.Debugf("Sending bulk of %d bytes", data.Len())
 	resp, err := l.HttpClient.Do(req)
 	if err != nil {
-		sugLog.Errorf("Error sending logs to %s %s", l.Url, err)
+		//sugLog.Errorf("Error sending logs to %s %s", l.Url, err)
 		return 400
 	}
 
 	defer resp.Body.Close()
 	statusCode := resp.StatusCode
-	respBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		sugLog.Errorf("Error reading response body: %s", err.Error())
-	}
+	_, _ = ioutil.ReadAll(resp.Body)
+	//if err != nil {
+	//	//sugLog.Errorf("Error reading response body: %s", err.Error())
+	//}
 
-	if statusCode < 200 || statusCode > 299 {
-		sugLog.Errorf("Response from listener: %s", string(respBody))
-	}
+	//if statusCode < 200 || statusCode > 299 {
+	//	//sugLog.Errorf("Response from listener: %s", string(respBody))
+	//}
 
 	return statusCode
 }
