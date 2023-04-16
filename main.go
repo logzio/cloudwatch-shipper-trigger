@@ -175,24 +175,29 @@ func handleFirstInvocation() error {
 	added := make([]string, 0)
 	servicesToAdd := getServices()
 	if servicesToAdd != nil {
+		sugLog.Debug("There are services to process")
 		newAdded, err := addServices(sess, servicesToAdd)
 		if err != nil {
 			sugLog.Error(err.Error())
+		} else {
+			added = append(added, newAdded...)
 		}
-		added = append(added, newAdded...)
 	}
 
 	customPrefixes := getCustomPrefixes()
 	if customPrefixes != nil {
+		sugLog.Debug("There are custom prefixes to process")
 		newAdded, err := addCustomPrefixes(sess, customPrefixes)
 		if err != nil {
 			sugLog.Error(err.Error())
+		} else {
+			added = append(added, newAdded...)
 		}
-		added = append(added, newAdded...)
 	}
 
 	pathsToAdd := getCustomPaths()
 	if pathsToAdd != nil {
+		sugLog.Debug("There are custom log groups to process")
 		newAdded, err := addCustom(sess, pathsToAdd, added)
 		if err != nil {
 			sugLog.Error(err.Error())
@@ -258,6 +263,7 @@ func addCustom(sess *session.Session, customGroup, added []string) ([]string, er
 func addCustomPrefixes(sess *session.Session, customPrefixes []string) ([]string, error) {
 	logsClient := cloudwatchlogs.New(sess)
 	logGroups := getLogGroupsFromPrefixes(customPrefixes, logsClient)
+	sugLog.Debugf("log groups to process: %v", logGroups)
 	if len(logGroups) > 0 {
 		sugLog.Debug("Detected the following log groups from custom prefixes: ", logGroups)
 		newAdded := putSubscriptionFilter(logGroups, logsClient)
@@ -275,7 +281,7 @@ func addServices(sess *session.Session, servicesToAdd []string) ([]string, error
 		newAdded := putSubscriptionFilter(logGroups, logsClient)
 		return newAdded, nil
 	} else {
-		return nil, fmt.Errorf("Could not retrieve any log groups")
+		return nil, fmt.Errorf("Could not retrieve any log groups from services")
 	}
 }
 

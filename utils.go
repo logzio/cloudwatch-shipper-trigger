@@ -80,10 +80,7 @@ func getShipperFunctionName() string {
 func getCustomPrefixes() []string {
 	customPrefixesStr := os.Getenv(envCustomPrefixes)
 	if customPrefixesStr != emptyString {
-		customPrefixes := strings.Split(customPrefixesStr, ",")
-		if len(customPrefixes) > 1 {
-			return customPrefixes
-		}
+		return strings.Split(customPrefixesStr, ",")
 	}
 
 	return nil
