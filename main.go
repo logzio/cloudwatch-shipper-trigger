@@ -125,6 +125,10 @@ func newLogGroupCreated(logGroup string) {
 		return
 	}
 	servicesToAdd := getServices()
+	customPrefixes := getCustomPrefixes()
+	if servicesToAdd != nil || customPrefixes != nil {
+		prefixes :=
+	}
 	var added []string
 	if servicesToAdd != nil {
 		serviceToPrefix := getServicesMap()
@@ -135,12 +139,14 @@ func newLogGroupCreated(logGroup string) {
 		}
 		logsClient := cloudwatchlogs.New(sess)
 		for _, service := range servicesToAdd {
-			if prefix, ok := serviceToPrefix[service]; ok {
-				if strings.Contains(logGroup, prefix) {
-					added = putSubscriptionFilter([]string{logGroup}, logsClient)
-					if len(added) > 0 {
-						sugLog.Info("Added log group: ", logGroup)
-						return
+			if prefixes, ok := serviceToPrefix[service]; ok {
+				for _, prefix := range prefixes {
+					if strings.Contains(logGroup, prefix) {
+						added = putSubscriptionFilter([]string{logGroup}, logsClient)
+						if len(added) > 0 {
+							sugLog.Info("Added log group: ", logGroup)
+							return
+						}
 					}
 				}
 			}
@@ -164,19 +170,28 @@ func handleFirstInvocation() error {
 	servicesToAdd := getServices()
 	if servicesToAdd != nil {
 		newAdded, err := addServices(sess, servicesToAdd)
-		added = append(added, newAdded...)
 		if err != nil {
 			sugLog.Error(err.Error())
 		}
+		added = append(added, newAdded...)
+	}
+
+	customPrefixes := getCustomPrefixes()
+	if customPrefixes != nil {
+		newAdded, err := addCustomPrefixes(sess, customPrefixes)
+		if err != nil {
+			sugLog.Error(err.Error())
+		}
+		added = append(added, newAdded...)
 	}
 
 	pathsToAdd := getCustomPaths()
 	if pathsToAdd != nil {
 		newAdded, err := addCustom(sess, pathsToAdd, added)
-		added = append(added, newAdded...)
 		if err != nil {
 			sugLog.Error(err.Error())
 		}
+		added = append(added, newAdded...)
 	}
 
 	sugLog.Debug("Following these log groups: ", added)
@@ -234,6 +249,18 @@ func addCustom(sess *session.Session, customGroup, added []string) ([]string, er
 	return newAdded, nil
 }
 
+func addCustomPrefixes(sess *session.Session, customPrefixes []string) ([]string, error) {
+	logsClient := cloudwatchlogs.New(sess)
+	logGroups := getLogGroupsFromPrefixes(customPrefixes, logsClient)
+	if len(logGroups) > 0 {
+		sugLog.Debug("Detected the following log groups from custom prefixes: ", logGroups)
+		newAdded := putSubscriptionFilter(logGroups, logsClient)
+		return newAdded, nil
+	} else {
+		return nil, fmt.Errorf("Could not retrieve any log groups from custom prefixes")
+	}
+}
+
 func addServices(sess *session.Session, servicesToAdd []string) ([]string, error) {
 	logsClient := cloudwatchlogs.New(sess)
 	logGroups := getLogGroups(servicesToAdd, logsClient)
@@ -274,17 +301,30 @@ func getLogGroups(services []string, logsClient *cloudwatchlogs.CloudWatchLogs) 
 	logGroupsToAdd := make([]string, 0)
 	serviceToPrefix := getServicesMap()
 	for _, service := range services {
-		if prefix, ok := serviceToPrefix[service]; ok {
-			sugLog.Debug("Working on prefix: ", prefix)
-			newLogGroups, err := logGroupsPagination(prefix, logsClient)
-			if err != nil {
-				sugLog.Errorf("Error while searching for log groups of %s: %s", service, err.Error())
+		if prefixes, ok := serviceToPrefix[service]; ok {
+			add := getLogGroupsFromPrefixes(prefixes, logsClient)
+			if len(add) > 0 {
+				logGroupsToAdd = append(logGroupsToAdd, add...)
 			}
 
-			logGroupsToAdd = append(logGroupsToAdd, newLogGroups...)
 		} else {
 			sugLog.Errorf("Service %s is not supported. Skipping.", service)
 		}
+	}
+
+	return logGroupsToAdd
+}
+
+func getLogGroupsFromPrefixes(prefixes []string, logsClient *cloudwatchlogs.CloudWatchLogs) []string {
+	logGroupsToAdd := make([]string, 0)
+	for _, prefix := range prefixes {
+		sugLog.Debug("Working on prefix: ", prefix)
+		newLogGroups, err := logGroupsPagination(prefix, logsClient)
+		if err != nil {
+			sugLog.Errorf("Error while searching for log groups of %s: %s", prefixes, err.Error())
+		}
+
+		logGroupsToAdd = append(logGroupsToAdd, newLogGroups...)
 	}
 
 	return logGroupsToAdd

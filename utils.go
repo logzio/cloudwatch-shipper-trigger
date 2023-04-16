@@ -13,6 +13,7 @@ const (
 	envAccountId      = "ACCOUNT_ID"
 	envCustomGroups   = "CUSTOM_GROUPS"
 	envAwsPartition   = "AWS_PARTITION"
+	envCustomPrefixes
 
 	valuesSeparator        = ","
 	emptyString            = ""
@@ -30,22 +31,22 @@ func getServices() []string {
 	return strings.Split(servicesStr, valuesSeparator)
 }
 
-func getServicesMap() map[string]string {
-	return map[string]string{
-		"apigateway":       "/aws/apigateway/",
-		"rds":              "/aws/rds/cluster/",
-		"cloudhsm":         "/aws/cloudhsm/",
-		"cloudtrail":       "aws-cloudtrail-logs-",
-		"codebuild":        "/aws/codebuild/",
-		"connect":          "/aws/connect/",
-		"elasticbeanstalk": "/aws/elasticbeanstalk/",
-		"ecs":              "/aws/ecs/",
-		"eks":              "/aws/eks/",
-		"aws-glue":         "/aws/aws-glue/",
-		"aws-iot":          "AWSIotLogsV2",
-		"lambda":           "/aws/lambda/",
-		"macie":            "/aws/macie/",
-		"amazon-mq":        "/aws/amazonmq/broker/",
+func getServicesMap() map[string][]string {
+	return map[string][]string{
+		"apigateway":       {"/aws/apigateway/", "API-Gateway-Execution-Logs"},
+		"rds":              {"/aws/rds/cluster/"},
+		"cloudhsm":         {"/aws/cloudhsm/"},
+		"cloudtrail":       {"aws-cloudtrail-logs-"},
+		"codebuild":        {"/aws/codebuild/"},
+		"connect":          {"/aws/connect/"},
+		"elasticbeanstalk": {"/aws/elasticbeanstalk/"},
+		"ecs":              {"/aws/ecs/"},
+		"eks":              {"/aws/eks/"},
+		"aws-glue":         {"/aws/aws-glue/"},
+		"aws-iot":          {"AWSIotLogsV2"},
+		"lambda":           {"/aws/lambda/"},
+		"macie":            {"/aws/macie/"},
+		"amazon-mq":        {"/aws/amazonmq/broker/"},
 	}
 }
 
@@ -74,5 +75,16 @@ func getShipperFunctionName() string {
 	arn := os.Getenv(envShipperFuncArn)
 	arnArr := strings.Split(arn, ":")
 	return arnArr[len(arnArr)-1]
+}
 
+func getCustomPrefixes() []string {
+	customPrefixesStr := os.Getenv(envCustomPrefixes)
+	if customPrefixesStr != emptyString {
+		customPrefixes := strings.Split(customPrefixesStr, ",")
+		if len(customPrefixes) > 1 {
+			return customPrefixes
+		}
+	}
+
+	return nil
 }
