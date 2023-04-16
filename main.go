@@ -126,28 +126,34 @@ func newLogGroupCreated(logGroup string) {
 	}
 	servicesToAdd := getServices()
 	customPrefixes := getCustomPrefixes()
-	if servicesToAdd != nil || customPrefixes != nil {
-		prefixes :=
-	}
-	var added []string
+	prefixesToAdd := make([]string, 0)
 	if servicesToAdd != nil {
 		serviceToPrefix := getServicesMap()
+		for _, service := range servicesToAdd {
+			if prefixes, ok := serviceToPrefix[service]; ok {
+				prefixesToAdd = append(prefixesToAdd, prefixes...)
+			}
+		}
+	}
+
+	if prefixesToAdd != nil {
+		prefixesToAdd = append(prefixesToAdd, customPrefixes...)
+	}
+
+	var added []string
+	if len(prefixesToAdd) > 0 {
 		sess, err := getSession()
 		if err != nil {
 			sugLog.Error("Could not create aws session: ", err.Error())
 			return
 		}
 		logsClient := cloudwatchlogs.New(sess)
-		for _, service := range servicesToAdd {
-			if prefixes, ok := serviceToPrefix[service]; ok {
-				for _, prefix := range prefixes {
-					if strings.Contains(logGroup, prefix) {
-						added = putSubscriptionFilter([]string{logGroup}, logsClient)
-						if len(added) > 0 {
-							sugLog.Info("Added log group: ", logGroup)
-							return
-						}
-					}
+		for _, prefix := range prefixesToAdd {
+			if strings.Contains(logGroup, prefix) {
+				added = putSubscriptionFilter([]string{logGroup}, logsClient)
+				if len(added) > 0 {
+					sugLog.Info("Added log group: ", logGroup)
+					return
 				}
 			}
 		}
