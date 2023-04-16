@@ -13,7 +13,7 @@ const (
 	envAccountId      = "ACCOUNT_ID"
 	envCustomGroups   = "CUSTOM_GROUPS"
 	envAwsPartition   = "AWS_PARTITION"
-	envCustomPrefixes
+	envCustomPrefixes = "CUSTOM_PREFIXES"
 
 	valuesSeparator        = ","
 	emptyString            = ""

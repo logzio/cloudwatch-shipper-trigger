@@ -82,6 +82,9 @@ Parameters:
       - error
       - fatal
       - panic
+  customPrefixes:
+    Type: String
+    Description: A comme-seperated list of prefixes of log groups you want to collect logs from
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -104,6 +107,7 @@ Metadata:
         Parameters:
           - services
           - customLogGroups
+          - customPrefixes
           - triggerLambdaTimeout
           - triggerLambdaMemory
           - triggerLambdaLogLevel
@@ -156,6 +160,7 @@ Resources:
           AWS_PARTITION: !Ref AWS::Partition
           SHIPPER_ARN: !GetAtt logzioCloudwatchLogsLambda.Arn
           LOG_LEVEL: !Ref triggerLambdaLogLevel
+          CUSTOM_PREFIXES: !Ref customPrefixes
   triggerLambdaRole:
     Type: 'AWS::IAM::Role'
     Properties:
