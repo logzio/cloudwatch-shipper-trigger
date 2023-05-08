@@ -1,8 +1,10 @@
-# CloudFormation
-CloudFormation template that provides customer to run 2 integrations in the same time.
-Each integration you can find with following urls: 
-- For metrics (See here the function's repo)[https://github.com/logzio/cloudwatch-metrics-helpers].
-- For logs (See here the function's repo)[https://github.com/logzio/cloudwatch-shipper-trigger].
+# Ship Logs and Metrics
+
+This CloudFormation template allows shipping AWS Logs and Metrics to logz.io.
+
+It will deploy the following projects:
+- AWS metrics to Logzio (See here the function's repo)[https://github.com/logzio/cloudwatch-metrics-helpers].
+- AWS logs to Logz.io (See here the function's repo)[https://github.com/logzio/cloudwatch-shipper-trigger].
 
 
 ## Instructions
