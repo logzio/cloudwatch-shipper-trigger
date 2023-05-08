@@ -1,0 +1,178 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Ship your Cloudwatch logs and metrics from AWS Services to Logz.io.
+Parameters:
+  logzioLogsListener:
+    Type: String
+    Description: 'The Logz.io listener URL for your region. You can find explanations here: https://docs.logz.io/user-guide/accounts/account-region.html, releated to logs'
+    Default: 'https://listener.logz.io:8071'
+    AllowedValues:
+      - 'https://listener.logz.io:8071'
+      - 'https://listener-au.logz.io:8071'
+      - 'https://listener-ca.logz.io:8071'
+      - 'https://listener-eu.logz.io:8071'
+      - 'https://listener-nl.logz.io:8071'
+      - 'https://listener-uk.logz.io:8071'
+      - 'https://listener-wa.logz.io:8071'
+  logzioLogsToken:
+    Type: String
+    Description: 'Your Logz.io log shipping token'
+    MinLength: 1
+  logzioLogsType:
+    Type: String
+    Description: >- 
+      The log type you'll use with this Lambda.
+      Please note that you should create a new Lambda for each log type you use.
+      This can be a built-in log type, or your custom log type
+    Default: 'logzio_cloudwatch_lambda'
+  logzioLogsFormat:
+    Type: String
+    Description: >-
+      json or text.
+      If json, the lambda function will attempt to parse the message field as JSON
+      and populate the event data with the parsed fields."
+    Default: 'text'
+    AllowedValues:
+      - 'text'
+      - 'json'
+  logzioLogsCompress:
+    Type: String
+    Description: If true, the Lambda will send compressed logs. If false, the Lambda will send uncompressed logs
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+  logzioLogsEnrich:
+    Type: String
+    Description: Enriches the CloudWatch events with custom properties at ship time. The format is `key1=value1;key2=value2`. By default is empty.
+  shipperLambdaTimeout:
+    Type: Number
+    Description: >-
+      The number of seconds that Lambda allows a function to run before stopping it, for the shipper function.
+    Default: 60
+  shipperLambdaMemory:
+    Type: Number
+    Description: Shipper function's allocated CPU proportional to the memory configured, in MB.
+    Default: 512
+  services:
+    Type: String
+    Description: A comma-seperated list of services you want to collect logs from
+  customLogGroups:
+    Type: String
+    Description: A comma-seperated list of custom log groups you want to collect logs from
+  triggerLambdaTimeout:
+    Type: Number
+    Description: >-
+      The amount of seconds that Lambda allows a function to run before stopping it, for the trigger function.
+    Default: 60
+  triggerLambdaMemory:
+    Type: Number
+    Description: Trigger function's allocated CPU proportional to the memory configured, in MB.
+    Default: 512
+  triggerLambdaLogLevel:
+    Type: String
+    Description: 'Log level for the Lambda function. Can be one of: debug, info, warn, error, fatal, panic.'
+    Default: info
+    AllowedValues:
+      - debug
+      - info
+      - warn
+      - error
+      - fatal
+      - panic
+  logzioMetricsDestination:
+    Type: String
+    Description: 'Your Logz.io destination'
+    Default: 'https://listener-aws-metrics-stream-us.logz.io/'
+    AllowedValues:
+      - 'https://listener-aws-metrics-stream-us.logz.io/'
+      - 'https://listener-aws-metrics-stream-eu.logz.io/'
+      - 'https://listener-aws-metrics-stream-au.logz.io/'
+      - 'https://listener-aws-metrics-stream-uk.logz.io/'
+      - 'https://listener-aws-metrics-stream-ca.logz.io/'
+  logzioMetricsToken:
+    Type: String
+    Description: 'Your Logz.io log shipping token'
+    MinLength: 1
+  logzioMetricsListener:
+    Type: String
+    Description: 'Your Logz.io listener'
+    Default: 'https://listener.logz.io:8053'
+    AllowedValues:
+      - 'https://listener.logz.io:8053'
+      - 'https://listener-au.logz.io:8053'
+      - 'https://listener-ca.logz.io:8053'
+      - 'https://listener-eu.logz.io:8053'
+      - 'https://listener-uk.logz.io:8053'
+  awsNamespaces:
+    Type: String
+    Description: 'The AWS namespaces you want to collect metrics from'
+    MinLength: 1
+  httpEndpointDestinationIntervalInSeconds:
+    Type: Number
+    Description: 'The length of time, in seconds, that Kinesis Data Firehose buffers incoming data before delivering it to the destination'
+    Default: 60
+  httpEndpointDestinationSizeInMBs:
+    Type: Number
+    Description: 'The size of the buffer, in MBs, that Kinesis Data Firehose uses for incoming data before delivering it to the destination'
+    Default: 5
+Metadata: 
+  AWS::CloudFormation::Interface: 
+    ParameterGroups: 
+      - 
+        Label: 
+          default: "Configuration for send logs from Cloudwatch services or groups"
+        Parameters: 
+          - logzioLogsListener
+          - logzioLogsToken
+          - logzioLogsType
+          - logzioLogsFormat
+          - logzioLogsCompress
+          - shipperLambdaTimeout
+          - shipperLambdaMemory
+          - services
+          - triggerLambdaTimeout
+          - triggerLambdaMemory
+          - triggerLambdaLogLevel
+          - logzioLogsEnrich
+          - customLogGroups
+      - 
+        Label: 
+          default: "Configuration for collect AWS metrics to send them to Logz.io"
+        Parameters: 
+          - logzioMetricsDestination
+          - logzioMetricsToken
+          - logzioMetricsListener
+          - awsNamespaces
+          - httpEndpointDestinationIntervalInSeconds
+          - httpEndpointDestinationSizeInMBs
+Resources:
+  awsLogs:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://logzio-aws-integrations-us-east-1.s3.amazonaws.com/cloudwatch-shipper-trigger/1.1.0/sam-template.yaml
+      Parameters:
+        logzioListener: !Ref logzioLogsListener
+        logzioToken: !Ref logzioLogsToken
+        logzioType: !Ref logzioLogsType
+        logzioFormat: !Ref logzioLogsFormat
+        logzioCompress: !Ref logzioLogsCompress
+        shipperLambdaTimeout: !Ref shipperLambdaTimeout
+        shipperLambdaMemory: !Ref shipperLambdaMemory
+        services: !Ref services
+        triggerLambdaTimeout: !Ref triggerLambdaTimeout
+        triggerLambdaMemory: !Ref triggerLambdaMemory
+        triggerLambdaLogLevel: !Ref triggerLambdaLogLevel
+        logzioEnrich: !Ref logzioLogsEnrich
+        customLogGroups: !Ref customLogGroups
+  awsMetrics:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://logzio-aws-integrations-us-east-1.s3.amazonaws.com/metric-stream-helpers/aws/1.2.4/sam-template.yaml
+      Parameters:
+        logzioDestination: !Ref logzioMetricsDestination
+        logzioToken: !Ref logzioMetricsToken
+        logzioListener: !Ref logzioMetricsListener
+        awsNamespaces: !Ref awsNamespaces
+        httpEndpointDestinationIntervalInSeconds: !Ref httpEndpointDestinationIntervalInSeconds
+        httpEndpointDestinationSizeInMBs: !Ref httpEndpointDestinationSizeInMBs
